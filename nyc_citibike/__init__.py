@@ -1,9 +1,13 @@
 from dagster import Definitions, load_assets_from_modules
 
-from . import assets
+from .assets import rides
+from .resources import database_resource
 
-all_assets = load_assets_from_modules([assets])
+ride_assets = load_assets_from_modules([rides])
 
 defs = Definitions(
-    assets=all_assets,
+    assets=[*ride_assets],
+    resources={
+        "database": database_resource
+    },
 )
