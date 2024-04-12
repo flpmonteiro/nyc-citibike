@@ -1,4 +1,7 @@
 import zipfile
+import os
+import glob
+from dagster_gcp.bigquery.resources import bigquery_resource
 import requests
 import pandas as pd
 from io import BytesIO
@@ -11,7 +14,7 @@ from dagster_duckdb import DuckDBResource
 from dagster_gcp import BigQueryResource
 
 from . import constants
-from ..partitions import monthly_partition
+from ..partitions import monthly_partition, yearly_partition
 
 
 def download_and_extract(url: str, destination_path: str) -> bool:
@@ -38,39 +41,37 @@ def download_and_extract(url: str, destination_path: str) -> bool:
 
 
 @asset(
-    partitions_def=monthly_partition,
+    partitions_def=yearly_partition,
     group_name="raw_files",
 )
-def bike_rides_file(context) -> MaterializeResult:
+def download_extract_historic_ride_data(context) -> None:
     """
     Download files of Citi Bike trip data.
     """
-    partition_date_str = context.asset_partition_key_for_output()
-    year_month = partition_date_str
+    year = context.asset_partition_key_for_output()  # partition date string
 
-    url = constants.DOWNLOAD_URL.format(year_month)
-    raw_file_path = constants.BIKE_RIDES_FILE_PATH.format(year_month)
+    url = constants.HISTORIC_DOWNLOAD_URL.format(year)
+    raw_file_path = constants.RAW_FILE_PATH
 
-    # Attempt to download and save file to disk.
-    # If successful, load as DataFrame to return some metadata
-    if download_and_extract(url, raw_file_path):
-        print(f"File saved successfully to {raw_file_path}")
-        df = pd.read_csv(raw_file_path)
-        return MaterializeResult(
-            metadata={
-                "Number of records": len(df),
-                "Preview": MetadataValue.md(df.head().to_markdown()),
-            }
-        )
-    else:
-        print(f"Failed to download or extract the file")
-        return MaterializeResult(metadata={"Error": "Download or extraction failed"})
+    # Download the zip file
+    print(f"Starting download from url {url}")
+    response = requests.get(url)
+    zip_content = BytesIO(response.content)
+
+    # Use zipfile to extract CSV files
+    with zipfile.ZipFile(zip_content) as zip_ref:
+        # List all the file names in the zip
+        for file_name in zip_ref.namelist():
+            # Check if the file is a CSV
+            if file_name.endswith(".csv"):
+                # Extract the file to the specified directory
+                zip_ref.extract(file_name, raw_file_path)
 
 
 @asset(
-    deps=["bike_rides_file"],
-    partitions_def=monthly_partition,
-    group_name="ingested",
+    deps=["download_extract_historic_ride_data"],
+    partitions_def=yearly_partition,
+    group_name="duckdb",
 )
 def bike_rides_to_duckdb(context, database: DuckDBResource) -> None:
     """
