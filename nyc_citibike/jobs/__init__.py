@@ -1,8 +1,11 @@
+from nyc_citibike.assets.rides import download_extract_historic_ride_data
 from dagster import AssetSelection, define_asset_job
-from ..partitions import monthly_partition
+from ..partitions import monthly_partition, yearly_partition
 
-rides_update_job = define_asset_job(
+historic_bike_rides = AssetSelection.keys("download_extract_historic_ride_data")
+
+historic_rides_update_job = define_asset_job(
     name="rides_update_job",
-    partitions_def=monthly_partition,
-    selection=AssetSelection.all()
+    partitions_def=yearly_partition,
+    selection=historic_bike_rides
 )
