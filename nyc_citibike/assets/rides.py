@@ -48,7 +48,7 @@ def download_extract_historic_ride_data(context) -> None:
     """
     Download files of Citi Bike trip data.
     """
-    year = context.asset_partition_key_for_output()  # partition date string
+    year = context.partition_key
 
     url = constants.HISTORIC_DOWNLOAD_URL.format(year)
     raw_file_path = constants.RAW_FILE_PATH
@@ -77,7 +77,7 @@ def bike_rides_to_duckdb(context, database: DuckDBResource) -> None:
     """
     The bike rides data ingest into a DuckDB instance.
     """
-    partition_date_str = context.asset_partition_key_for_output()
+    partition_date_str = context.partition_key
     year_month = partition_date_str
 
     query = f"""
@@ -150,7 +150,7 @@ def create_bigquery_table(bigquery_resource: BigQueryResource):
     partitions_def=yearly_partition,
 )
 def convert_csv_to_parquet(context) -> None:
-    year = context.asset_partition_key_for_output()
+    year = context.partition_key
     data_dir = constants.RAW_FILE_PATH
     pattern = os.path.join(data_dir, f"{year}-citibike-tripdata", "**", "*.csv")
     csv_files = glob.glob(pattern, recursive=True)
