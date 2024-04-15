@@ -183,41 +183,13 @@ def bike_rides_to_bigquery(context, bigquery_resource: BigQueryResource):
     dataset = "nyc_citibike_data"
     table_name = "rides_raw"
     main_table = f"{bigquery_resource.project}.{dataset}.{table_name}"
-    staging_table = (
-        f"{bigquery_resource.project}.{dataset}.{table_name}_staging_parquet"
-    )
 
-    year = context.asset_partition_key_for_output()
+    year = context.partition_key
     data_dir = constants.RAW_FILE_PATH
     pattern = os.path.join(data_dir, f"{year}-citibike-tripdata", "**", "*.parquet")
     parquet_files = glob.glob(pattern, recursive=True)
 
-    merge_query = f"""
-            MERGE INTO `{main_table}` AS main
-            USING `{staging_table}` AS staging
-            ON main.ride_id = staging.ride_id
-            WHEN NOT MATCHED BY TARGET THEN
-                INSERT ({",".join(constants.SCHEMA.keys())})
-                VALUES (
-                    staging.ride_id,
-                    staging.rideable_type,
-                    staging.started_at,
-                    staging.ended_at,
-                    staging.start_station_name,
-                    staging.start_station_id,
-                    staging.end_station_name,
-                    staging.end_station_id,
-                    staging.start_lat,
-                    staging.start_lng,
-                    staging.end_lat,
-                    staging.end_lng,
-                    staging.member_casual
-                    )
-        """
-
     job_config = bigquery.LoadJobConfig(
-        # schema=[bigquery.SchemaField(k, v) for k, v in constants.SCHEMA_NEW.items()],
-        # skip_leading_rows=1,  # Skip header row in CSV files
         source_format=bigquery.SourceFormat.PARQUET,
     )
 
@@ -227,17 +199,7 @@ def bike_rides_to_bigquery(context, bigquery_resource: BigQueryResource):
             with open(file_path, "rb") as f:
                 # Load data into a staging table
                 job = client.load_table_from_file(
-                    file_obj=f, destination=staging_table,
-                    job_config=job_config
+                    file_obj=f, destination=main_table, job_config=job_config
                 )
                 job.result()
-                print(
-                    f"Done loading data from {os.path.basename(file_path)} into staging"
-                )
-
-                # Use SQL to merge staging data into the main table, avoiding duplicates
-                # query_job = client.query(merge_query)
-                # query_job.result()
-
-                # Clean up the staging table after merge
-                # client.delete_table(staging_table, not_found_ok=True)
+                print(f"Done loading data from {os.path.basename(file_path)}")
