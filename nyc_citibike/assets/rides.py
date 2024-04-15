@@ -71,7 +71,7 @@ def clean_duplicate_raw_files(years: list[int] = [2013, 2018]) -> dict:
 )
 def download_extract_historic_ride_data(context) -> None:
     """
-    Download files of Citi Bike trip data.
+    Download and extract Citi Bike trip data from source URL for a given year.
     """
     year = context.partition_key
 
@@ -91,6 +91,11 @@ def download_extract_historic_ride_data(context) -> None:
             if file_name.endswith(".csv"):
                 # Extract the file to the specified directory
                 zip_ref.extract(file_name, raw_file_path)
+
+    # After extracting, clean any duplicata data
+    clean_duplicate_raw_files()
+
+    return None
 
 
 @asset(
@@ -227,4 +232,4 @@ def bike_rides_to_bigquery(context, bigquery_resource: BigQueryResource):
                     file_obj=f, destination=main_table, job_config=job_config
                 )
                 job.result()
-                print(f"Done loading data from {os.path.basename(file_path)}")
+            print(f"Done loading data from {os.path.basename(file_path)}")
