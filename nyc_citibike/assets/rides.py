@@ -1,7 +1,6 @@
 import zipfile
 import os
 import glob
-from dagster_gcp.bigquery.resources import bigquery_resource
 import requests
 import pandas as pd
 from io import BytesIO
@@ -63,6 +62,14 @@ def clean_duplicate_raw_files(years: list[int] = [2013, 2018]) -> dict:
                 results['errors'].append(error_message)
                 print(error_message)
     return results
+
+
+def get_month_from_path(path: str) -> int:
+    """Return month number from data path.
+    For example, return 1 from
+    data/raw/2023-citibike-tripdata/1_January/202301-citibike-tripdata_1.csv
+    """
+    return int(path.split(os.path.sep)[3].split("_")[0])
 
 
 @asset(
@@ -154,7 +161,6 @@ def bike_rides_to_duckdb(context, database: DuckDBResource) -> None:
 
 
 @asset(
-    deps=["download_extract_historic_ride_data"],
     group_name="bigquery",
 )
 def create_bigquery_table(bigquery_resource: BigQueryResource):
@@ -175,17 +181,10 @@ def create_bigquery_table(bigquery_resource: BigQueryResource):
             client.create_table(table)
 
 
-def get_month_from_path(path: str) -> int:
-    """Return month number from data path.
-    For example, return 1 from
-    data/raw/2023-citibike-tripdata/1_January/202301-citibike-tripdata_1.csv
-    """
-    return int(path.split(os.path.sep)[3].split("_")[0])
-
-
 @asset(
     deps=["download_extract_historic_ride_data"],
     partitions_def=yearly_partition,
+    group_name="raw_files",
 )
 def convert_csv_to_parquet(context) -> None:
     year = context.partition_key
