@@ -145,6 +145,14 @@ def create_bigquery_table(bigquery_resource: BigQueryResource):
             client.create_table(table)
 
 
+def get_month_from_path(path: str) -> int:
+    """Return month number from data path.
+    For example, return 1 from
+    data/raw/2023-citibike-tripdata/1_January/202301-citibike-tripdata_1.csv
+    """
+    return int(path.split(os.path.sep)[3].split("_")[0])
+
+
 @asset(
     deps=["download_extract_historic_ride_data"],
     partitions_def=yearly_partition,
@@ -156,7 +164,13 @@ def convert_csv_to_parquet(context) -> None:
     csv_files = glob.glob(pattern, recursive=True)
 
     for csv_file_path in csv_files:
+        print(f"Beginning conversion for {csv_file_path}")
         df = pd.read_csv(csv_file_path, dtype=str)
+        month = get_month_from_path(csv_file_path)
+        if int(year) < 2021 or (int(year) == 2021 and month == 1):
+            df.columns = constants.SCHEMA_OLD.keys()
+        else:
+            df.columns = constants.SCHEMA_NEW.keys()
         df.to_parquet(os.path.splitext(csv_file_path)[0] + ".parquet", index=False)
 
 
