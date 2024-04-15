@@ -2,15 +2,14 @@ RAW_FILE_PATH = "data/raw"
 
 RAW_FILE_NAME = "bike_rides_{}.csv"
 
-# HISTORIC_DOWNLOAD_URL = "https://s3.amazonaws.com/tripdata/{}-citibike-tripdata.zip"
-HISTORIC_DOWNLOAD_URL = "http://127.0.0.1:8000/{}-citibike-tripdata.zip"
+HISTORIC_DOWNLOAD_URL = "https://s3.amazonaws.com/tripdata/{}-citibike-tripdata.zip"
 
 CURRENT_DOWNLOAD_URL = "https://s3.amazonaws.com/tripdata/{}-citibike-tripdata.csv.zip"
 
 START_DATE = "202401"
 END_DATE = "202403"
 
-HISTORIC_START_YEAR = "2020"
+HISTORIC_START_YEAR = "2013"
 HISTORIC_END_YEAR = "2024"
 
 SCHEMA = {
