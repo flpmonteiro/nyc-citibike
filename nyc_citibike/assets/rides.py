@@ -40,6 +40,31 @@ def download_and_extract(url: str, destination_path: str) -> bool:
     return False
 
 
+def clean_duplicate_raw_files(years: list[int] = [2013, 2018]) -> dict:
+    """
+    Some of the yearly zip files from the data source contain duplicate csv
+    files. This function deletes those.
+    """
+    data_dir = constants.RAW_FILE_PATH
+    results = {'total_files': 0, 'deleted_files': 0, 'errors': []}
+
+    for year in years:
+        pattern = os.path.join(data_dir, f"{year}-citibike-tripdata", "*.csv")
+        csv_files = glob.glob(pattern)
+        results['total_files'] += len(csv_files)
+
+        for csv_file in csv_files:
+            try:
+                os.remove(csv_file)
+                results['deleted_files'] += 1
+                print(f"File {csv_file} has been deleted successfully.")
+            except Exception as e:
+                error_message = f"An error occurred when trying to delete {csv_file}: {e}"
+                results['errors'].append(error_message)
+                print(error_message)
+    return results
+
+
 @asset(
     partitions_def=yearly_partition,
     group_name="raw_files",
