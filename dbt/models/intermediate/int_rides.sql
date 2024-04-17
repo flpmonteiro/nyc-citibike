@@ -1,3 +1,9 @@
+{{
+    config(
+        materialized='table'
+    )
+}}
+
 with
     rides_raw as (select * from {{ ref("stg_nyc_citibike__rides_raw") }}),
 
