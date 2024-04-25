@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: nyc_citibike
-    database: nyc-citibike-419421
+    database: nyc-citibike-421320
     schema: nyc_citibike_data
     tables:
       - name: rides_raw
