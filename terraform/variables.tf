@@ -17,3 +17,7 @@ variable "bq_dataset_name" {
 variable "service_account_key_path" {
   default = "/home/felipe/gcp-service-accounts/nyc-citibike-421320-65330999ac09.json"
 }
+
+variable "bq_dbt_schema" {
+  default = "dbt_fmonteiro"
+}

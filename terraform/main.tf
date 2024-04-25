@@ -17,3 +17,9 @@ resource "google_bigquery_dataset" "nyc_citibike_data" {
   dataset_id                 = var.bq_dataset_name
   delete_contents_on_destroy = true
 }
+
+
+resource "google_bigquery_dataset" "dbt_fmonteiro" {
+  dataset_id                 = var.bq_dbt_schema
+  delete_contents_on_destroy = true
+}
