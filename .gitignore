@@ -1,5 +1,6 @@
 tmp*/
 
+*.db
 *.duckdb
 *.geojson
 *.csv
